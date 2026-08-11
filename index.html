@@ -1,15 +1,177 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fa" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ShieldVPN - دانلود اپلیکیشن VPN امن و سریع</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Warden VPN</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;600;800&display=swap');
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-cyan-500 selection:text-black">
+
+    <!-- Navbar -->
+    <header class="border-b border-slate-800/80 bg-slate-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
+                    <i data-lucide="shield" class="w-6 h-6 text-white"></i>
+                </div>
+                <span class="text-xl font-bold tracking-wider bg-gradient-to-r from-white via-slate-200 to-cyan-400 bg-clip-text text-transparent">
+                    WARDEN <span class="text-cyan-400 font-extrabold">VPN</span>
+                </span>
+            </div>
+
+            <div class="flex items-center gap-2 bg-slate-800/60 px-3 py-1.5 rounded-full border border-slate-700/50 text-sm">
+                <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                <span id="status-text" class="text-slate-300 font-medium">قطع می‌باشد</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto px-6 py-12 flex-1 flex flex-col items-center justify-center w-full gap-10">
+        
+        <!-- Power Button -->
+        <div class="flex flex-col items-center gap-6">
+            <div class="relative group">
+                <div id="glow-effect" class="absolute -inset-4 rounded-full blur-2xl transition duration-500 bg-slate-700/20 opacity-50"></div>
+
+                <button id="connect-btn" onclick="toggleConnect()" class="relative w-40 h-40 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-300 transform active:scale-95 shadow-2xl bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200">
+                    <i data-lucide="power" class="w-16 h-16 transition-transform duration-300"></i>
+                    <span id="btn-text" class="mt-2 text-xs font-bold tracking-widest uppercase">CONNECT</span>
+                </button>
+            </div>
+
+            <div class="text-center">
+                <p class="text-slate-400 text-sm">آی‌پی فعلی شما:</p>
+                <p id="ip-address" class="font-mono text-cyan-400 font-semibold tracking-wider text-lg">178.131.12.44 (اصلی)</p>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl">
+            <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center gap-3">
+                <i data-lucide="arrow-down" class="w-5 h-5 text-cyan-400"></i>
+                <div>
+                    <p class="text-xs text-slate-400">دانلود</p>
+                    <p id="download-speed" class="text-lg font-bold">0.0 MB/s</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center gap-3">
+                <i data-lucide="arrow-up" class="w-5 h-5 text-blue-400"></i>
+                <div>
+                    <p class="text-xs text-slate-400">آپلود</p>
+                    <p id="upload-speed" class="text-lg font-bold">0.0 MB/s</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/60 border border-slate-800 p-4 rounded-2xl flex items-center gap-3 col-span-2 md:col-span-1">
+                <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
+                <div>
+                    <p class="text-xs text-slate-400">پینگ (Ping)</p>
+                    <p id="ping-val" class="text-lg font-bold">--</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Server Selector -->
+        <div class="w-full max-w-2xl bg-slate-900/80 border border-slate-800 rounded-2xl p-4 flex items-center justify-between shadow-xl">
+            <div class="flex items-center gap-3">
+                <i data-lucide="server" class="w-5 h-5 text-cyan-400"></i>
+                <div>
+                    <p class="text-xs text-slate-400">سرور انتخاب شده</p>
+                    <p class="font-semibold text-slate-200">آلمان - فرانکفورت</p>
+                </div>
+            </div>
+            <button class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-sm font-medium rounded-xl border border-slate-700 transition">
+                تغییر سرور
+            </button>
+        </div>
+
+        <!-- Features -->
+        <div class="grid md:grid-cols-3 gap-6 w-full max-w-3xl mt-4">
+            <div class="p-5 bg-slate-900/40 border border-slate-800/60 rounded-2xl flex flex-col items-center text-center">
+                <i data-lucide="zap" class="w-8 h-8 text-amber-400 mb-2"></i>
+                <h3 class="font-semibold text-slate-200 mb-1">سرعت فوق‌العاده</h3>
+                <p class="text-xs text-slate-400">پروتکل اختصاصی جهت کاهش پینگ و حداکثر پهنای باند</p>
+            </div>
+
+            <div class="p-5 bg-slate-900/40 border border-slate-800/60 rounded-2xl flex flex-col items-center text-center">
+                <i data-lucide="lock" class="w-8 h-8 text-cyan-400 mb-2"></i>
+                <h3 class="font-semibold text-slate-200 mb-1">رمزنگاری پیشرفته</h3>
+                <p class="text-xs text-slate-400">حفاظت کامل از داده‌ها با متد رمزنگاری AES-256</p>
+            </div>
+
+            <div class="p-5 bg-slate-900/40 border border-slate-800/60 rounded-2xl flex flex-col items-center text-center">
+                <i data-lucide="globe" class="w-8 h-8 text-blue-400 mb-2"></i>
+                <h3 class="font-semibold text-slate-200 mb-1">عدم ثبت لوگ (No-Log)</h3>
+                <p class="text-xs text-slate-400">تضمین حریم خصوصی کامل بدون ذخیره‌سازی اطلاعات</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+        <p>© 2026 Warden VPN. All Rights Reserved.</p>
+    </footer>
+
+    <!-- Script -->
+    <script>
+        lucide.createIcons();
+
+        let isConnected = false;
+
+        function toggleConnect() {
+            isConnected = !isConnected;
+
+            const btn = document.getElementById('connect-btn');
+            const btnText = document.getElementById('btn-text');
+            const glow = document.getElementById('glow-effect');
+            const statusDot = document.getElementById('status-dot');
+            const statusText = document.getElementById('status-text');
+            const ipAddress = document.getElementById('ip-address');
+            const downloadSpeed = document.getElementById('download-speed');
+            const uploadSpeed = document.getElementById('upload-speed');
+            const pingVal = document.getElementById('ping-val');
+
+            if (isConnected) {
+                // Connected State
+                btn.className = "relative w-40 h-40 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-300 transform active:scale-95 shadow-2xl bg-gradient-to-b from-cyan-500 to-blue-600 border-cyan-300 text-white shadow-cyan-500/50";
+                btnText.innerText = "DISCONNECT";
+                glow.className = "absolute -inset-4 rounded-full blur-2xl transition duration-500 bg-cyan-500/40 opacity-100";
+                
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse";
+                statusText.innerText = "متصل شد";
+
+                ipAddress.innerText = "185.220.101.5";
+                downloadSpeed.innerText = "42.5 MB/s";
+                uploadSpeed.innerText = "12.8 MB/s";
+                pingVal.innerText = "38 ms";
+            } else {
+                // Disconnected State
+                btn.className = "relative w-40 h-40 rounded-full border-4 flex flex-col items-center justify-center transition-all duration-300 transform active:scale-95 shadow-2xl bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200";
+                btnText.innerText = "CONNECT";
+                glow.className = "absolute -inset-4 rounded-full blur-2xl transition duration-500 bg-slate-700/20 opacity-50";
+
+                statusDot.className = "w-2.5 h-2.5 rounded-full bg-rose-500";
+                statusText.innerText = "قطع می‌باشد";
+
+                ipAddress.innerText = "178.131.12.44 (اصلی)";
+                downloadSpeed.innerText = "0.0 MB/s";
+                uploadSpeed.innerText = "0.0 MB/s";
+                pingVal.innerText = "--";
+            }
+        }
+    </script>
+</body>
 </html>
